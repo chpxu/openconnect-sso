@@ -11,7 +11,7 @@ let
       version = splitVersion qtbase.version;
       majorMinor = concatStrings (take 2 version);
     in
-    pkgs."libsForQt${majorMinor}";
+    pkgs."libsForQt5";
 
   inherit (qtLibsFor pkgs.python3Packages.pyqt5) callPackage;
   pythonPackages = pkgs.python3Packages;
