@@ -1,44 +1,45 @@
-{ sources ? import ./sources.nix
-, pkgs ? import <nixpkgs> {
-    overlays = [ (import "${sources.poetry2nix}/overlay.nix") ];
-  }
+{
+  sources ? import ./sources.nix,
+  pkgs,
 }:
 
 let
-  qtLibsFor = with pkgs.lib; dep:
+  qtLibsFor =
+    with pkgs.lib;
+    dep:
     let
       qtbase = head (filter (d: getName d.name == "qtbase") dep.nativeBuildInputs);
       version = splitVersion qtbase.version;
       majorMinor = concatStrings (take 2 version);
     in
     pkgs."libsForQt5";
-
+  wrapQtAppsHook = pkgs.qt5.wrapQtAppsHook;
   inherit (qtLibsFor pkgs.python3Packages.pyqt5) callPackage;
   pythonPackages = pkgs.python3Packages;
 
-  openconnect-sso = callPackage ./openconnect-sso.nix { inherit (pkgs) python3Packages; };
+  openconnect-sso = callPackage ./openconnect-sso.nix { inherit pkgs wrapQtAppsHook; };
 
   shell = pkgs.mkShell {
-    buildInputs = with pkgs; [
-      # For Makefile
-      gawk
-      git
-      gnumake
-      which
-      niv # Dependency manager for Nix expressions
-      nixpkgs-fmt # To format Nix source files
-      poetry # Dependency manager for Python
-    ] ++ (
-      with pythonPackages; [
-        pre-commit # To check coding style during commit
+    buildInputs =
+      with pkgs;
+      [
+        # For Makefile
+        gawk
+        git
+        gnumake
+        which
+        nixpkgs-fmt # To format Nix source files
       ]
-    ) ++ (
-      # only install those dependencies in the shell env which are meant to be
-      # visible in the environment after installation of the actual package.
-      # Specifying `inputsFrom = [ openconnect-sso ]` introduces weird errors as
-      # it brings transitive dependencies into scope.
-      openconnect-sso.propagatedBuildInputs
-    );
+      ++ (with pythonPackages; [
+        pre-commit # To check coding style during commit
+      ])
+      ++ (
+        # only install those dependencies in the shell env which are meant to be
+        # visible in the environment after installation of the actual package.
+        # Specifying `inputsFrom = [ openconnect-sso ]` introduces weird errors as
+        # it brings transitive dependencies into scope.
+        openconnect-sso.propagatedBuildInputs
+      );
     shellHook = ''
       # Python wheels are ZIP files which cannot contain timestamps prior to
       # 1980
@@ -50,7 +51,7 @@ let
     '';
   };
 
-  niv = if pkgs ? niv then pkgs.nim else pkgs.haskellPackages.niv;
+  # niv = if pkgs ? niv then pkgs.nim else pkgs.haskellPackages.niv;
 
   qtwrapper = pkgs.stdenv.mkDerivation {
     name = "qtwrapper";
@@ -59,7 +60,7 @@ let
       "\${qtWrapperArgs[@]}"
     ];
     unpackPhase = ":";
-    nativeBuildInputs = [ pkgs.qt5.wrapQtAppsHook ];
+    nativeBuildInputs = [ wrapQtAppsHook ];
     installPhase = ''
       mkdir -p $out/bin
       cat > $out/bin/wrap-qt <<'EOF'
