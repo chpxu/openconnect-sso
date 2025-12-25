@@ -15,7 +15,7 @@ let
     pkgs."libsForQt5";
   wrapQtAppsHook = pkgs.qt5.wrapQtAppsHook;
   inherit (qtLibsFor pkgs.python3Packages.pyqt5) callPackage;
-  pythonPackages = pkgs.python3Packages;
+  pythonPackages = pkgs.python312Packages;
 
   openconnect-sso = callPackage ./openconnect-sso.nix { inherit pkgs wrapQtAppsHook; };
 
@@ -30,9 +30,9 @@ let
         which
         nixpkgs-fmt # To format Nix source files
       ]
-      ++ (with pythonPackages; [
-        pre-commit # To check coding style during commit
-      ])
+      # ++ (with pythonPackages; [
+      #   pre-commit # To check coding style during commit
+      # ])
       ++ (
         # only install those dependencies in the shell env which are meant to be
         # visible in the environment after installation of the actual package.

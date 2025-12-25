@@ -36,17 +36,22 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/chpxu/openconnect-sso"
 issues = "https://github.com/chpxu/openconnect-sso/issues"
+[tool.hatch.build.target.sdist.force-include]
+"openconnect_sso/cli.py" = "openconnect_sso/cli.py"
 
-# [tool.poetry.scripts]
-# openconnect-sso = "openconnect_sso.cli:main"
+[tool.hatch.build.target.wheel.force-include]
+"openconnect_sso/cli.py" = "openconnect_sso/cli.py"
 
-[tool.poetry.dev-dependencies]
-coverage_enable_subprocess = "^1.0"
-pytest = "^7.2"
-black = "=22.10"
-pytest-asyncio = "^0.20.1"
-pytest-cov = "^4.0"
-pytest-httpserver = "^1.0"
+[project.scripts]
+openconnect-sso = "openconnect_sso.cli:main"
+
+# [tool.poetry.dev-dependencies]
+# coverage_enable_subprocess = "^1.0"
+# pytest = "^7.2"
+# black = "=22.10"
+# pytest-asyncio = "^0.20.1"
+# pytest-cov = "^4.0"
+# pytest-httpserver = "^1.0"
 
 [tool.black]
 target-version = ['py310']
