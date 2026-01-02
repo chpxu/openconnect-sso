@@ -19,6 +19,7 @@
     pyqt6
     pyqt6-webengine
     pyotp
+    urllib3
   ];
 in
   pkgs.python312.pkgs.buildPythonApplication rec {

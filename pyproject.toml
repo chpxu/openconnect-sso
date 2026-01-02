@@ -32,6 +32,7 @@ dependencies = [
     "PyQt6>=6.3.0",
     "PyQt6-WebEngine>=6.3.0",
     "pyotp>=2.7.0",
+    "urllib3>=2.5.0",
 ]
 [project.urls]
 Homepage = "https://github.com/chpxu/openconnect-sso"

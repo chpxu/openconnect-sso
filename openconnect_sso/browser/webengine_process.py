@@ -14,7 +14,7 @@ from PyQt6.QtNetwork import QNetworkCookie, QNetworkProxy
 from PyQt6.QtWebEngineCore import QWebEngineScript, QWebEngineProfile, QWebEnginePage
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWidgets import QApplication, QWidget, QSizePolicy, QVBoxLayout
-
+import importlib.resources
 from openconnect_sso import config
 
 
@@ -158,7 +158,14 @@ class WebBrowser(QWebEngineView):
             return self._popupWindow.view()
 
     def authenticate_at(self, url, credentials):
-        script_source = pkg_resources.resource_string(__name__, "user.js").decode()
+        # script_source = pkg_resources.resource_string(__name__, "user.js").decode()
+        script_source = (
+            importlib.resources.files("openconnect_sso")
+            .joinpath("browser", "user.js")
+            .read_bytes()
+            .decode()
+        )
+
         script = QWebEngineScript()
         script.setInjectionPoint(QWebEngineScript.InjectionPoint.DocumentCreation)
         script.setWorldId(QWebEngineScript.ScriptWorldId.ApplicationWorld)
