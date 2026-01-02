@@ -1,27 +1,25 @@
 {
   sources ? import ./sources.nix,
   pkgs,
-}:
-
-let
-  qtLibsFor =
-    with pkgs.lib;
-    dep:
-    let
+}: let
+  qtLibsFor = with pkgs.lib;
+    dep: let
       qtbase = head (filter (d: getName d.name == "qtbase") dep.nativeBuildInputs);
       version = splitVersion qtbase.version;
       majorMinor = concatStrings (take 2 version);
     in
-    pkgs."libsForQt5";
+      pkgs."libsForQt5";
   wrapQtAppsHook = pkgs.qt5.wrapQtAppsHook;
-  inherit (qtLibsFor pkgs.python3Packages.pyqt5) callPackage;
+  inherit (qtLibsFor pkgs.python312Packages.pyqt5) callPackage;
   pythonPackages = pkgs.python312Packages;
 
-  openconnect-sso = callPackage ./openconnect-sso.nix { inherit pkgs wrapQtAppsHook; };
+  openconnect-sso = callPackage ./openconnect-sso.nix {inherit pkgs wrapQtAppsHook;};
 
   shell = pkgs.mkShell {
-    buildInputs =
-      with pkgs;
+    env = {
+      QT_QPA_PLATFORM = "offscreen";
+    };
+    buildInputs = with pkgs;
       [
         # For Makefile
         gawk
@@ -29,6 +27,9 @@ let
         gnumake
         which
         nixpkgs-fmt # To format Nix source files
+        libxcb
+        libxcb-cursor
+        qtwrapper
       ]
       # ++ (with pythonPackages; [
       #   pre-commit # To check coding style during commit
@@ -60,7 +61,7 @@ let
       "\${qtWrapperArgs[@]}"
     ];
     unpackPhase = ":";
-    nativeBuildInputs = [ wrapQtAppsHook ];
+    nativeBuildInputs = [wrapQtAppsHook];
     installPhase = ''
       mkdir -p $out/bin
       cat > $out/bin/wrap-qt <<'EOF'
@@ -71,7 +72,6 @@ let
       wrapQtApp $out/bin/wrap-qt
     '';
   };
-in
-{
-  inherit openconnect-sso shell;
+in {
+  inherit openconnect-sso shell qtwrapper;
 }
