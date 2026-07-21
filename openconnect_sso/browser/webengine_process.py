@@ -6,14 +6,14 @@ import sys
 from urllib.parse import urlparse
 
 import attr
-# import pkg_resources
 import importlib_resources
 import logging
 import structlog
 
 from PyQt6.QtCore import QUrl, QTimer, pyqtSlot, Qt
 from PyQt6.QtNetwork import QNetworkCookie, QNetworkProxy
-from PyQt6.QtWebEngineWidgets import QWebEngineView, QWebEnginePage, QWebEngineScript, QWebEngineProfile
+from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtWebEngineCore import QWebEnginePage, QWebEngineScript, QWebEngineProfile
 from PyQt6.QtWidgets import QApplication, QWidget, QSizePolicy, QVBoxLayout
 
 from openconnect_sso import config
@@ -103,9 +103,9 @@ class Process(multiprocessing.Process):
         if self.proxy:
             parsed = urlparse(self.proxy)
             if parsed.scheme.startswith("socks5"):
-                proxy_type = QNetworkProxy.Socks5Proxy
+                proxy_type = QNetworkProxy.ProxyType.Socks5Proxy
             elif parsed.scheme.startswith("http"):
-                proxy_type = QNetworkProxy.HttpProxy
+                proxy_type = QNetworkProxy.ProxyType.HttpProxy
             else:
                 raise ValueError("Unsupported proxy type", parsed.scheme)
             proxy = QNetworkProxy(proxy_type, parsed.hostname, parsed.port)
@@ -171,7 +171,7 @@ class WebBrowser(QWebEngineView):
         self.page().loadFinished.connect(self._on_load_finished)
 
     def createWindow(self, type):
-        if type == QWebEnginePage.WebBrowserWindow:
+        if type == QWebEnginePage.WebWindowType.WebBrowserWindow:
             self._popupWindow = WebPopupWindow(self.page().profile())
             return self._popupWindow.view()
 
@@ -180,8 +180,8 @@ class WebBrowser(QWebEngineView):
         script_source = importlib_resources.files(__name__).joinpath("user.js").read_bytes()
 
         script = QWebEngineScript()
-        script.setInjectionPoint(QWebEngineScript.DocumentCreation)
-        script.setWorldId(QWebEngineScript.ApplicationWorld)
+        script.setInjectionPoint(QWebEngineScript.InjectionPoint.DocumentCreation)
+        script.setWorldId(QWebEngineScript.ScriptWorldId.ApplicationWorld)
         script.setSourceCode(script_source)
         self.page().scripts().insert(script)
 
@@ -189,8 +189,8 @@ class WebBrowser(QWebEngineView):
             logger.info("Initiating autologin", cred=credentials)
             for url_pattern, rules in self._auto_fill_rules.items():
                 script = QWebEngineScript()
-                script.setInjectionPoint(QWebEngineScript.DocumentReady)
-                script.setWorldId(QWebEngineScript.ApplicationWorld)
+                script.setInjectionPoint(QWebEngineScript.InjectionPoint.DocumentReady)
+                script.setWorldId(QWebEngineScript.ScriptWorldId.ApplicationWorld)
                 script.setSourceCode(
                     f"""
 // ==UserScript==
@@ -224,8 +224,8 @@ class WebPopupWindow(QWidget):
         super().__init__()
         self._view = QWebEngineView(self)
 
-        super().setAttribute(Qt.WA_DeleteOnClose)
-        super().setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        super().setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        super().setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
 
         layout = QVBoxLayout()
         super().setLayout(layout)

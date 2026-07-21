@@ -30,11 +30,13 @@ def run(args):
     cfg = config.load()
 
     try:
-        if os.name == "nt":
-            asyncio.set_event_loop(asyncio.ProactorEventLoop())
-        auth_response, selected_profile = asyncio.get_event_loop().run_until_complete(
-            _run(args, cfg)
-        )
+        # if os.name == "nt":
+        #     asyncio.set_event_loop(asyncio.ProactorEventLoop())
+        # auth_response, selected_profile = asyncio.get_event_loop().run_until_complete(
+        #     _run(args, cfg)
+        # )
+        # try:
+        auth_response, selected_profile = asyncio.run(_run(args, cfg))
     except KeyboardInterrupt:
         logger.warn("CTRL-C pressed, exiting")
         return 130
@@ -177,7 +179,7 @@ async def select_profile(profile_list):
     # Somehow prompt_toolkit sets up a bogus signal handler upon exit
     # TODO: Report this issue upstream
     if hasattr(signal, "SIGWINCH"):
-        asyncio.get_event_loop().remove_signal_handler(signal.SIGWINCH)
+        asyncio.get_running_loop().remove_signal_handler(signal.SIGWINCH)
     if not selection:
         return selection
     logger.info("Selected profile", profile=selection.name)
