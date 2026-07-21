@@ -1,25 +1,16 @@
 {
   sources ? import ./sources.nix,
   pkgs,
-}: let
-  qtLibsFor = with pkgs.lib;
-    dep: let
-      qtbase = head (filter (d: getName d.name == "qtbase") dep.nativeBuildInputs);
-      version = splitVersion qtbase.version;
-      majorMinor = concatStrings (take 2 version);
-    in
-      pkgs."libsForQt5";
-  wrapQtAppsHook = pkgs.qt5.wrapQtAppsHook;
-  inherit (qtLibsFor pkgs.python312Packages.pyqt5) callPackage;
-  pythonPackages = pkgs.python312Packages;
+}:
 
-  openconnect-sso = callPackage ./openconnect-sso.nix {inherit pkgs wrapQtAppsHook;};
+let
+  inherit (pkgs) python314Packages qt5;
+  openconnect = pkgs.callPackage ./openconnect.nix { };
+  openconnect-sso = qt5.callPackage ./openconnect-sso.nix { inherit openconnect; };
 
   shell = pkgs.mkShell {
-    env = {
-      QT_QPA_PLATFORM = "offscreen";
-    };
-    buildInputs = with pkgs;
+    buildInputs =
+      with pkgs;
       [
         # For Makefile
         gawk
@@ -27,13 +18,10 @@
         gnumake
         which
         nixpkgs-fmt # To format Nix source files
-        libxcb
-        libxcb-cursor
-        qtwrapper
       ]
-      # ++ (with pythonPackages; [
-      #   pre-commit # To check coding style during commit
-      # ])
+      ++ (with python314Packages; [
+        pre-commit # To check coding style during commit
+      ])
       ++ (
         # only install those dependencies in the shell env which are meant to be
         # visible in the environment after installation of the actual package.
@@ -41,6 +29,7 @@
         # it brings transitive dependencies into scope.
         openconnect-sso.propagatedBuildInputs
       );
+
     shellHook = ''
       # Python wheels are ZIP files which cannot contain timestamps prior to
       # 1980
@@ -52,16 +41,15 @@
     '';
   };
 
-  # niv = if pkgs ? niv then pkgs.nim else pkgs.haskellPackages.niv;
-
   qtwrapper = pkgs.stdenv.mkDerivation {
     name = "qtwrapper";
     dontWrapQtApps = true;
-    makeWrapperArgs = [
-      "\${qtWrapperArgs[@]}"
-    ];
+    makeWrapperArgs = [ "\${qtWrapperArgs[@]}" ];
     unpackPhase = ":";
-    nativeBuildInputs = [wrapQtAppsHook];
+    nativeBuildInputs = with qt5; [
+      wrapQtAppsHook
+      qtbase
+    ];
     installPhase = ''
       mkdir -p $out/bin
       cat > $out/bin/wrap-qt <<'EOF'
@@ -72,6 +60,7 @@
       wrapQtApp $out/bin/wrap-qt
     '';
   };
-in {
-  inherit openconnect-sso shell qtwrapper;
+in
+{
+  inherit openconnect-sso shell;
 }

@@ -6,22 +6,40 @@ import sys
 from urllib.parse import urlparse
 
 import attr
-import pkg_resources
+# import pkg_resources
+import importlib_resources
+import logging
 import structlog
 
 from PyQt6.QtCore import QUrl, QTimer, pyqtSlot, Qt
 from PyQt6.QtNetwork import QNetworkCookie, QNetworkProxy
-from PyQt6.QtWebEngineCore import QWebEngineScript, QWebEngineProfile, QWebEnginePage
-from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtWebEngineWidgets import QWebEngineView, QWebEnginePage, QWebEngineScript, QWebEngineProfile
 from PyQt6.QtWidgets import QApplication, QWidget, QSizePolicy, QVBoxLayout
-import importlib.resources
+
 from openconnect_sso import config
 
 
 app = None
 profile = None
+
 logger = structlog.get_logger("webengine")
 
+structlog.configure(
+    processors=[
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.add_logger_name,
+        structlog.processors.format_exc_info,
+        structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+    ],
+    logger_factory=structlog.stdlib.LoggerFactory(),
+)
+
+formatter = structlog.stdlib.ProcessorFormatter(
+    processor=structlog.dev.ConsoleRenderer()
+)
+
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
 
 @attr.s
 class Url:
@@ -153,22 +171,17 @@ class WebBrowser(QWebEngineView):
         self.page().loadFinished.connect(self._on_load_finished)
 
     def createWindow(self, type):
-        if type == QWebEnginePage.WebDialog:
+        if type == QWebEnginePage.WebBrowserWindow:
             self._popupWindow = WebPopupWindow(self.page().profile())
             return self._popupWindow.view()
 
     def authenticate_at(self, url, credentials):
-        # script_source = pkg_resources.resource_string(__name__, "user.js").decode()
-        script_source = (
-            importlib.resources.files("openconnect_sso")
-            .joinpath("browser", "user.js")
-            .read_bytes()
-            .decode()
-        )
+        # script_source = pkg_resources.resource_string(__name__, "user.js").decode()  # pyright: ignore
+        script_source = importlib_resources.files(__name__).joinpath("user.js").read_bytes()
 
         script = QWebEngineScript()
-        script.setInjectionPoint(QWebEngineScript.InjectionPoint.DocumentCreation)
-        script.setWorldId(QWebEngineScript.ScriptWorldId.ApplicationWorld)
+        script.setInjectionPoint(QWebEngineScript.DocumentCreation)
+        script.setWorldId(QWebEngineScript.ApplicationWorld)
         script.setSourceCode(script_source)
         self.page().scripts().insert(script)
 
@@ -176,8 +189,8 @@ class WebBrowser(QWebEngineView):
             logger.info("Initiating autologin", cred=credentials)
             for url_pattern, rules in self._auto_fill_rules.items():
                 script = QWebEngineScript()
-                script.setInjectionPoint(QWebEngineScript.InjectionPoint.DocumentReady)
-                script.setWorldId(QWebEngineScript.ScriptWorldId.ApplicationWorld)
+                script.setInjectionPoint(QWebEngineScript.DocumentReady)
+                script.setWorldId(QWebEngineScript.ApplicationWorld)
                 script.setSourceCode(
                     f"""
 // ==UserScript==
@@ -211,7 +224,7 @@ class WebPopupWindow(QWidget):
         super().__init__()
         self._view = QWebEngineView(self)
 
-        super().setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        super().setAttribute(Qt.WA_DeleteOnClose)
         super().setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
         layout = QVBoxLayout()
