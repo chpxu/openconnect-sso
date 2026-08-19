@@ -11,11 +11,13 @@ logger = structlog.get_logger()
 
 
 class Authenticator:
-    def __init__(self, host, proxy=None, credentials=None, version=None):
+    def __init__(self, host, proxy=None, verify=None, credentials=None, version=None, scan_file=None):
         self.host = host
         self.proxy = proxy
         self.credentials = credentials
         self.version = version
+        self.verify = verify
+        self.scan_file = scan_file
         self.session = create_http_session(proxy, version)
 
     async def authenticate(self, display_mode):

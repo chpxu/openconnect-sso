@@ -191,9 +191,9 @@ def authenticate_to(host, proxy, credentials, display_mode, version, verify, sca
     return Authenticator(
         host,
         proxy,
+        verify,
         credentials,
         version,
-        verify=verify,
         scan_file=scan_file,
     ).authenticate(display_mode)
 

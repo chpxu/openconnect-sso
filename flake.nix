@@ -51,6 +51,7 @@
                 ]
               ))
               openconnect-sso
+              pkgs.qt6Packages.qtwayland
             ];
             propagatedBuildInputs = [
               (pkgs.python314.withPackages (python-pkgs: with python-pkgs; [ setuptools ]))

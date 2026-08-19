@@ -4,9 +4,9 @@
 }:
 
 let
-  inherit (pkgs) python314Packages qt5;
+  inherit (pkgs) python314Packages qt6;
   openconnect = pkgs.callPackage ./openconnect.nix { };
-  openconnect-sso = qt5.callPackage ./openconnect-sso.nix { inherit openconnect; };
+  openconnect-sso = qt6.callPackage ./openconnect-sso.nix { inherit openconnect; };
 
   shell = pkgs.mkShell {
     buildInputs =
@@ -46,7 +46,7 @@ let
     dontWrapQtApps = true;
     makeWrapperArgs = [ "\${qtWrapperArgs[@]}" ];
     unpackPhase = ":";
-    nativeBuildInputs = with qt5; [
+    nativeBuildInputs = with qt6; [
       wrapQtAppsHook
       qtbase
     ];

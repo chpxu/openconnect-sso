@@ -177,7 +177,7 @@ class WebBrowser(QWebEngineView):
 
     def authenticate_at(self, url, credentials):
         # script_source = pkg_resources.resource_string(__name__, "user.js").decode()  # pyright: ignore
-        script_source = importlib_resources.files(__name__).joinpath("user.js").read_bytes()
+        script_source = importlib_resources.files(__name__).joinpath("user.js").read_text()
 
         script = QWebEngineScript()
         script.setInjectionPoint(QWebEngineScript.InjectionPoint.DocumentCreation)

@@ -41,7 +41,7 @@ pkgs.python314.pkgs.buildPythonApplication rec {
   propagatedBuildInputs = [
     openconnect
   ]
-  ++ lib.optional (pkgs.stdenv.isLinux) pkgs.qt5.qtwayland;
+  ++ lib.optional (pkgs.stdenv.isLinux) pkgs.qt6Packages.qtwayland;
   # ++ dependencies;
   preFixup = ''
     makeWrapperArgs+=(
@@ -54,7 +54,7 @@ pkgs.python314.pkgs.buildPythonApplication rec {
   '';
   # propagatedBuildInputs = with pkgs.python312Packages; [ hatchling ] ++ [ pkgs.hatch ];
   nativeBuildInputs = [
-    pkgs.python314Packages.pyqt5
+    pkgs.python314Packages.pyqt6
     wrapQtAppsHook
   ];
   dontWrapQtApps = true;
